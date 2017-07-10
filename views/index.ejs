@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script type="text/javascript" src="/javascripts/encode.js"></script>
+    <script type="text/javascript" src="/javascripts/domParse.js"></script>
+    <script type="text/javascript">
+         //解码
+        var parse = function(str){
+            let results = ''
+            try{//先反转译在编译成domparse,对标签进行配对
+                HTMLParse(he.unescape(str,{strict:true}),{
+                    start:function(tag,attrs,unary){
+                        //过滤标签
+                        if(tag == 'script'||tag=='style'||tag=='link'||tag=='img'||tag=='iframe'||tag == 'frame') return;
+                        results += '<'+tag
+                        //过滤属性 - 删除所有属性及不进行处理
+                        // for(let i = 0,len=attrs.length;i<len;i++){
+                        //     results += " "+attrs[i].name+'="' + attrs[i].escaped +'"'
+                        // }
+                        //是否为单标签结构：true 是
+                        results+=(unary?"/":"")+">"
+                        console.log(results)
+                    },
+                    end:function(tag){
+                        results += "</"+tag+">"
+                    },
+                    chars:function(text){
+                        results += text
+                    },
+                    comment:function(text){
+                        results += "<!-- "+text+"-->"
+                    }
+                })
+                return results
+            }catch(e){
+
+            }finally{
+
+            }
+        }
+    </script>
+  </head>
+  <body>
+    <!-- <%=  %>: 对html进行转译 -->
+    <!-- <%-  %>: 不需要对html进行转译 -->
+    <h1><%= title %></h1>
+    <p>Welcome to <%= title %></p>
+    <div>
+        <%- xss %>
+    </div>
+    <textarea name = "name" rows="8" cols="80" id="txt">
+    </textarea>
+    <button type="button" name="button" id="btn">评论</button>
+    <button type="button" name="button" id="get">获取评论</button>
+
+    <script type="text/javascript">
+        let btn = document.getElementById("btn");
+        let get = document.getElementById("get");
+        let txt = document.getElementById("txt");
+       
+        btn.addEventListener('click',function(){
+            let xhr = new XMLHttpRequest();
+            let url = '/comment?comment='+txt.value
+            xhr.open('GET',url,true)
+            xhr.onreadystatechange = function(){
+                if(xhr.readyState == 4){
+                    if(xhr.status == 200){
+                        console.log(xhr)
+                    }else{
+                        console.log('1error')
+                    }
+                }
+            }
+            xhr.send()
+        })
+        get.addEventListener('click',function(){
+            let xhr = new XMLHttpRequest();
+            let url = '/getComment'
+            xhr.open('GET',url,true)
+            xhr.onreadystatechange = function(){
+                if(xhr.readyState == 4){
+                    if(xhr.status == 200){
+                        let com = parse(JSON.parse(xhr.response).comment)
+                        console.log(com)
+                        let txt = document.createElement('span');
+                        txt.innerHTML = com
+                        document.body.appendChild(txt)
+                    }else{
+                        console.log('1error')
+                    }
+                }
+            }
+            xhr.send()
+        })
+    </script>
+  </body>
+</html>
